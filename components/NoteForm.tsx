@@ -1,85 +1,269 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import {
+  useActionState,
+  useEffect,
+  useRef,
+  useState,
+  KeyboardEvent,
+} from "react";
 import { addNote, ActionState } from "@/app/actions/note";
 
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+
+import {
+  Bold,
+  Italic,
+  Strikethrough,
+  Code,
+  List,
+  ListOrdered,
+  Quote,
+  Heading1,
+  Heading2,
+  Eye,
+} from "lucide-react";
+
 export function NoteForm() {
-    const [state, formAction, isPending] = useActionState<ActionState, FormData>(addNote, null);
-    const formRef = useRef<HTMLFormElement>(null);
+  const [state, formAction, isPending] = useActionState<ActionState, FormData>(
+    addNote,
+    null
+  );
 
-    // Reset form on success
-    useEffect(() => {
-        if (state && !state.error) {
-            formRef.current?.reset();
-        }
-    }, [state]);
+  const formRef = useRef<HTMLFormElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-    return (
-        <form 
-            ref={formRef} 
-            action={formAction} 
-            className="flex flex-col gap-4 w-full p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-sm mb-12 relative overflow-hidden"
-        >
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-80" />
-            
-            <h2 className="text-xl font-semibold mb-2">Create a New Note</h2>
-            
-            <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300" htmlFor="title">Title</label>
-                <input 
-                    id="title"
-                    name="title" 
-                    type="text" 
-                    placeholder="E.g., Meeting notes"
-                    className="px-4 py-2 bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-medium"
-                    required
-                    disabled={isPending}
-                />
-            </div>
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState("");
+  const [content, setContent] = useState("");
+  const [showPreview, setShowPreview] = useState(false);
 
-            <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300" htmlFor="content">Content</label>
-                <textarea 
-                    id="content"
-                    name="content" 
-                    placeholder="What's on your mind?"
-                    rows={4}
-                    className="px-4 py-2 bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all resize-none"
-                    required
-                    disabled={isPending}
-                />
-            </div>
+  useEffect(() => {
+    if (state && !state.error) {
+      formRef.current?.reset();
+      setTags([]);
+      setTagInput("");
+      setContent("");
+    }
+  }, [state]);
 
-            <div className="flex items-center justify-between mt-2">
-                <div className="text-sm">
-                    {state && (
-                        <p className={state.error ? "text-red-500" : "text-green-500"}>
-                            {state.message}
-                        </p>
-                    )}
-                </div>
-                <button 
-                    type="submit" 
-                    disabled={isPending}
-                    className={`
-                        px-6 py-2.5 rounded-lg font-medium text-white transition-all
-                        flex items-center justify-center min-w-[120px]
-                        ${isPending 
-                            ? "bg-blue-400 cursor-not-allowed" 
-                            : "bg-blue-600 hover:bg-blue-700 active:scale-[0.98] shadow-md hover:shadow-lg"
-                        }
-                    `}
-                >
-                    {isPending ? (
-                        <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                            <span>Saving...</span>
-                        </div>
-                    ) : (
-                        "Save Note"
-                    )}
-                </button>
-            </div>
-        </form>
-    );
+  const insertFormatting = (prefix: string, suffix: string = "") => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+
+    const selected = content.substring(start, end);
+
+    const newContent =
+      content.substring(0, start) +
+      prefix +
+      selected +
+      suffix +
+      content.substring(end);
+
+    setContent(newContent);
+
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(
+        start + prefix.length,
+        end + prefix.length
+      );
+    }, 0);
+  };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      const newTag = tagInput.trim().toLowerCase();
+
+      if (newTag && !tags.includes(newTag)) {
+        setTags([...tags, newTag]);
+      }
+
+      setTagInput("");
+    }
+
+    if (e.key === "Backspace" && tagInput === "" && tags.length > 0) {
+      e.preventDefault();
+      setTags(tags.slice(0, -1));
+    }
+  };
+
+  const removeTag = (tag: string) => {
+    setTags(tags.filter((t) => t !== tag));
+  };
+
+  return (
+    <form
+      ref={formRef}
+      action={formAction}
+      className="max-w-3xl mx-auto flex flex-col gap-6"
+    >
+      {/* Title */}
+      <Input
+        name="title"
+        placeholder="Note title..."
+        required
+        disabled={isPending}
+        className="text-2xl font-semibold border-none shadow-none focus-visible:ring-0"
+      />
+
+      {/* Tags */}
+      <div className="flex flex-wrap gap-2">
+        {tags.map((tag) => (
+          <Badge key={tag} variant="secondary" className="flex gap-1">
+            #{tag}
+            <button type="button" onClick={() => removeTag(tag)}>
+              ×
+            </button>
+          </Badge>
+        ))}
+
+        <input
+          value={tagInput}
+          onChange={(e) => setTagInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Add tag..."
+          className="bg-transparent outline-none text-sm"
+        />
+      </div>
+
+      <input type="hidden" name="tags" value={tags.join(",")} />
+
+      {/* Editor */}
+      <div className="border rounded-2xl overflow-hidden bg-background">
+        {/* Toolbar */}
+        <div className="flex items-center gap-1 px-3 py-2 border-b bg-muted/40 flex-wrap">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => insertFormatting("**", "**")}
+          >
+            <Bold className="w-4 h-4" />
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => insertFormatting("*", "*")}
+          >
+            <Italic className="w-4 h-4" />
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => insertFormatting("~~", "~~")}
+          >
+            <Strikethrough className="w-4 h-4" />
+          </Button>
+
+          <Separator orientation="vertical" className="h-5 mx-1" />
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => insertFormatting("# ")}
+          >
+            <Heading1 className="w-4 h-4" />
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => insertFormatting("## ")}
+          >
+            <Heading2 className="w-4 h-4" />
+          </Button>
+
+          <Separator orientation="vertical" className="h-5 mx-1" />
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => insertFormatting("`", "`")}
+          >
+            <Code className="w-4 h-4" />
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => insertFormatting("> ")}
+          >
+            <Quote className="w-4 h-4" />
+          </Button>
+
+          <Separator orientation="vertical" className="h-5 mx-1" />
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => insertFormatting("- ")}
+          >
+            <List className="w-4 h-4" />
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => insertFormatting("1. ")}
+          >
+            <ListOrdered className="w-4 h-4" />
+          </Button>
+
+          <div className="flex-1" />
+
+          <Button
+            variant={showPreview ? "default" : "ghost"}
+            size="icon"
+            onClick={() => setShowPreview(!showPreview)}
+          >
+            <Eye className="w-4 h-4" />
+          </Button>
+        </div>
+
+        {/* Editor / Preview */}
+        {showPreview ? (
+          <div className="p-4 text-sm text-muted-foreground">
+            ⚠️ Replace with react-markdown later
+            <pre className="whitespace-pre-wrap">{content}</pre>
+          </div>
+        ) : (
+          <Textarea
+            ref={textareaRef}
+            name="content"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="Write your note..."
+            className="h-[400px] resize-none border-none focus-visible:ring-0"
+            required
+            disabled={isPending}
+          />
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="flex justify-between items-center">
+        <p className="text-sm">
+          {state?.message && (
+            <span className={state.error ? "text-red-500" : "text-green-500"}>
+              {state.message}
+            </span>
+          )}
+        </p>
+
+        <Button type="submit" disabled={isPending}>
+          {isPending ? "Saving..." : "Save Note"}
+        </Button>
+      </div>
+    </form>
+  );
 }

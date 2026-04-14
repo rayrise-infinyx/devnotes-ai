@@ -8,6 +8,20 @@
       "when": 1775996578699,
       "tag": "0000_spotty_juggernaut",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1776014564698,
+      "tag": "0001_fair_elektra",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1776095770896,
+      "tag": "0002_shiny_rafael_vega",
+      "breakpoints": true
     }
   ]
 }
