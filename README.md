@@ -36,7 +36,7 @@ Live Demo: [https://devnotes-ai.vercel.app/](https://devnotes-ai.vercel.app/)
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-username/devnotes-ai.git
+git clone https://github.com/rayrise-infinyx/devnotes-ai.git
 cd devnotes-ai
 ```
 
