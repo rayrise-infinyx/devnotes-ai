@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { SearchAndFilter } from "@/components/SearchAndFilter";
 import Link from "next/link";
 import { Suspense } from "react";
+import { AnimatedThemeToggle } from "@/components/animated-theme-toggle";
 
 export const metadata = {
   title: "DevNotes — Dashboard",
@@ -130,6 +131,7 @@ export default async function Home(props: Props) {
           </Link>
 
           <div className="flex-1" />
+          <AnimatedThemeToggle/>
           
           {activeNote && (
             <div className="flex items-center">
